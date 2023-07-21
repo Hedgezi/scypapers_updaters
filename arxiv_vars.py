@@ -1,0 +1,3 @@
+CATCHUP_URL = 'https://export.arxiv.org/api/query'
+MAX_ENTRIES_PER_REQUEST = 100
+MAX_PARALLEL_DOWNLOADS = 10
