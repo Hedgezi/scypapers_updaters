@@ -28,6 +28,8 @@ def download_paper(url: str, file_name: str):
     with open(file_name, 'wb') as f:
         f.write(response.content)
 
+    print(f'Downloaded {file_name}!')
+
 
 def download_all_entries_from_feed(feed: feedparser.FeedParserDict, previous_date: time.struct_time,
                                    max_parallel_downloads: int = 10) -> list:
@@ -65,6 +67,7 @@ def get_all_previous_papers_from_api(previous_date: time.struct_time, category: 
     :param max_parallel_downloads: Maximum number of parallel downloads
     """
     download_futures = []
+    request_iter = 0
 
     while True:
         response = requests.get(CATCHUP_URL, params={
@@ -72,16 +75,19 @@ def get_all_previous_papers_from_api(previous_date: time.struct_time, category: 
             'sortBy': 'lastUpdatedDate',
             'sortOrder': 'descending',
             'max_results': str(max_results),
-            'start': 0
+            'start': request_iter*max_results
         })
         if response.status_code != 200:
             print(f'Error: {response.status_code}')
             return
 
-        new_download_futures = download_all_entries_from_feed(feedparser.parse(response.text), previous_date, max_parallel_downloads)
+        new_download_futures = download_all_entries_from_feed(feedparser.parse(response.text), previous_date,
+                                                              max_parallel_downloads)
         download_futures.extend(new_download_futures)
         if len(new_download_futures) < max_results:
             break
+
+        request_iter += 1
 
     for future in download_futures:
         future.result()
