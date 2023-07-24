@@ -25,8 +25,13 @@ def download_paper(url: str, file_name: str):
         print(f'Error: {response.status_code}')
         return
 
+    if response.headers['Content-Type'] == 'application/x-eprint-tar':
+        file_name = file_name + '.tar'
+
     with open(file_name, 'wb') as f:
         f.write(response.content)
+
+    response.close()
 
     print(f'Downloaded {file_name}!')
 
@@ -39,7 +44,7 @@ def download_all_entries_from_feed(feed: feedparser.FeedParserDict, previous_dat
     :param feed: Feed to download papers from
     :param previous_date: Date, when DB was last updated
     :param max_parallel_downloads: Maximum number of parallel downloads
-    :return: List of futures of the downloads
+    :return: List of downloads futures
     """
     download_futures = []
 
@@ -94,6 +99,6 @@ def get_all_previous_papers_from_api(previous_date: time.struct_time, category: 
 
 
 if __name__ == '__main__':
-    time_to_test = (2023, 7, 18, 17, 30, 0, 0, 199, 0)
+    time_to_test = (2023, 7, 21, 17, 0, 0, 0, 202, 0)
     get_all_previous_papers_from_api(time.struct_time(time_to_test), 'cs.CV', MAX_ENTRIES_PER_REQUEST,
                                      MAX_PARALLEL_DOWNLOADS)
