@@ -1,0 +1,4 @@
+github.com/korovkin/limiter v0.0.0-20230307205149-3d4b2b34c99d h1:7CfsXfFpCG1wrUpuyOzG8+vpL1ZqH2goz23wZ9pboGE=
+github.com/korovkin/limiter v0.0.0-20230307205149-3d4b2b34c99d/go.mod h1:3NeYeWwAOTnDChps1fD7YGD/uWzp+tqmShgjhhMIHDM=
+golang.org/x/net v0.12.0 h1:cfawfvKITfUsFCeJIHJrbSxpeu/E81khclypR0GVT50=
+golang.org/x/net v0.12.0/go.mod h1:zEVYFnQC7m/vmpQFELhcD1EWkZlX69l4oqgmer6hfKA=
