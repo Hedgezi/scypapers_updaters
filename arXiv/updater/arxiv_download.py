@@ -10,7 +10,7 @@ import feedparser
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
-from arxiv_vars import *
+from arxiv_config import *
 
 
 def download_paper(url: str, file_name: str):
