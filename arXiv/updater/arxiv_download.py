@@ -8,7 +8,8 @@ This script downloads all papers from the arXiv API from a given date to the pre
 import time
 import feedparser
 import requests
-from concurrent.futures import ThreadPoolExecutor
+import logging
+from concurrent.futures import ThreadPoolExecutor, Future
 
 from arxiv_config import *
 
@@ -22,23 +23,28 @@ def download_paper(url: str, file_name: str):
     """
     response = requests.get(url)
     if response.status_code != 200:
-        print(f'Error: {response.status_code}')
+        logging.critical(f'Error: {response.status_code} on file {file_name}.')
         return
 
+    # Determine file extension, because it is not always present in file header
     if response.headers['Content-Type'] == 'application/x-eprint-tar':
         file_name = file_name + '.tar'
+    elif response.headers['Content-Type'] == 'application/pdf':
+        file_name = file_name + '.pdf'
+    elif response.headers['Content-Type'] == 'application/x-eprint':
+        file_name = file_name + '.tex'
 
     with open(file_name, 'wb') as f:
         f.write(response.content)
 
     response.close()
 
-    print(f'Downloaded {file_name}!')
+    logging.info(f'File {file_name} downloaded.')
 
 
 def download_all_entries_from_feed(feed: feedparser.FeedParserDict, previous_date: time.struct_time,
                                    thread_pool_executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=10)
-                                   ) -> list:
+                                   ) -> list[Future]:
     """
     Download all papers from a given feed.
 
@@ -53,10 +59,17 @@ def download_all_entries_from_feed(feed: feedparser.FeedParserDict, previous_dat
         if entry.updated_parsed < previous_date:
             break
 
-        cur_paper_id: str = entry.id.split('/')[-1]
+        link_split: list[str] = entry.id.split('/')
+        cur_paper_link: str = link_split[-1]  # link to paper
+        for segment in link_split[-2::-1]:
+            # legacy arXiv links contains name of category before ID; for example http://arxiv.org/abs/astro-ph/0701212
+            if segment == 'abs':
+                break
+            cur_paper_link = segment + '/' + cur_paper_link
+
         download_futures.append(thread_pool_executor.submit(download_paper,
-                                                            "https://arxiv.org/e-print/{0}".format(cur_paper_id),
-                                                            cur_paper_id))
+                                                            "https://arxiv.org/e-print/{0}".format(cur_paper_link),
+                                                            cur_paper_link.replace('/', '')))
 
     return download_futures
 
@@ -90,6 +103,7 @@ def get_all_previous_papers_from_api(previous_date: time.struct_time, category: 
         new_download_futures = download_all_entries_from_feed(feedparser.parse(response.text), previous_date,
                                                               thread_pool_executor)
         download_futures.extend(new_download_futures)
+        # if there are fewer results than max_results, then we collected every paper after our update date
         if len(new_download_futures) < max_results:
             break
 
@@ -101,6 +115,7 @@ def get_all_previous_papers_from_api(previous_date: time.struct_time, category: 
 
 
 if __name__ == '__main__':
-    time_to_test = (2023, 8, 1, 10, 0, 0, 0, 213, 0)
+    time_to_test = (2023, 8, 14, 17, 0, 0, 0, 226, 0)
+    logging.basicConfig(level=logging.INFO)
     get_all_previous_papers_from_api(time.struct_time(time_to_test), 'cs.AI', MAX_ENTRIES_PER_REQUEST,
                                      MAX_PARALLEL_DOWNLOADS)
