@@ -49,6 +49,7 @@ def download_acl_pdf(url: str, filename: str = "") -> None:
     r.raise_for_status()
     with open(PATH_TO_ACL_ANTHOLOGY + filename, "wb") as f:
         f.write(r.content)
+    r.close()
 
 
 def download_acl_anthology_corpus(urls: list[str]) -> None:
